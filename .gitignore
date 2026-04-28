@@ -1,0 +1,22 @@
+# Java / Maven
+target/
+*.class
+
+# Frontend
+node_modules/
+dist/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
+# Local runtime files
+.env
+.env.*
+*.log
+uploads/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
