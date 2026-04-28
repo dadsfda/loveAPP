@@ -18,3 +18,11 @@ export function fetchPreferences() {
 export function createPreference(payload: CreatePreferencePayload) {
   return apiClient.post<PreferenceResponse, PreferenceResponse>('/preferences', payload);
 }
+
+export function updatePreference(id: number, payload: CreatePreferencePayload) {
+  return apiClient.put<PreferenceResponse, PreferenceResponse>(`/preferences/${id}`, payload);
+}
+
+export function deletePreference(id: number) {
+  return apiClient.delete<void, void>(`/preferences/${id}`);
+}

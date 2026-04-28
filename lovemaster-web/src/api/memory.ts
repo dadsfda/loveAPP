@@ -20,6 +20,14 @@ export function createMemory(payload: CreateMemoryPayload) {
   return apiClient.post<MemoryResponse, MemoryResponse>('/memories', payload);
 }
 
+export function updateMemory(id: number, payload: CreateMemoryPayload) {
+  return apiClient.put<MemoryResponse, MemoryResponse>(`/memories/${id}`, payload);
+}
+
+export function deleteMemory(id: number) {
+  return apiClient.delete<void, void>(`/memories/${id}`);
+}
+
 export function uploadImage(file: File) {
   const formData = new FormData();
   formData.append('file', file);

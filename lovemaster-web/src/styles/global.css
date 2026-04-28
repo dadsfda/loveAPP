@@ -454,6 +454,34 @@ a {
   font-size: 13px;
 }
 
+.row-card-side,
+.card-heading-side {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-actions button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #8f7c84;
+  background: #fff5f7;
+  border: 1px solid rgba(240, 223, 227, 0.9);
+}
+
+.card-actions button:last-child {
+  color: #be3558;
+}
+
 .card-icon {
   width: 42px;
   height: 42px;
@@ -565,7 +593,12 @@ a {
   display: flex;
   gap: 9px;
   overflow-x: auto;
-  padding: 2px 0 10px;
+  padding: 2px 0 8px;
+  scrollbar-width: none;
+}
+
+.chip-row::-webkit-scrollbar {
+  display: none;
 }
 
 .chip {
@@ -610,6 +643,44 @@ a {
   margin-bottom: 14px;
 }
 
+.filter-panel {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.filter-label {
+  margin: 0 0 6px 2px;
+  color: #6f6670;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.filter-input {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 13px;
+  border-radius: 8px;
+  color: var(--primary-strong);
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.filter-input input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: #2f2f35;
+  background: transparent;
+}
+
+.filter-clear {
+  width: 100%;
+}
+
 .preference-card p,
 .idea-card p,
 .memory-card p,
@@ -632,6 +703,80 @@ a {
   padding: 4px 9px;
   color: #6a5d63;
   background: #f8eef1;
+}
+
+.idea-card {
+  width: 100%;
+  text-align: left;
+}
+
+.idea-card-top,
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.idea-card-top em {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #287b5b;
+  background: #edfff7;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px 12px calc(18px + env(safe-area-inset-bottom));
+  background: rgba(47, 47, 53, 0.32);
+}
+
+.detail-sheet {
+  width: min(100%, 456px);
+  max-height: min(78vh, 620px);
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: 16px 16px 8px 8px;
+  background: #fff;
+  box-shadow: 0 -12px 34px rgba(47, 47, 53, 0.18);
+}
+
+.sheet-header h2 {
+  margin: 5px 0 0;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.sheet-header span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.detail-block {
+  margin-top: 16px;
+}
+
+.detail-block h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.detail-block ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+  color: #4d4d58;
+  line-height: 1.6;
 }
 
 .upload-box {
@@ -694,7 +839,7 @@ a {
 
 .memory-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
   gap: 12px;
   margin-top: 14px;
 }
@@ -711,6 +856,8 @@ a {
   object-fit: cover;
   border-radius: 8px;
   margin-bottom: 10px;
+  background: #ffe8ef;
+  border: 1px solid rgba(240, 223, 227, 0.72);
 }
 
 .memory-card .tag-row {

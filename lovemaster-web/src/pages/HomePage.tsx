@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { CalendarHeart, HeartHandshake, Images, MessageCircleHeart, Plus, Sparkles, X } from 'lucide-react';
+import { CalendarHeart, HeartHandshake, Images, MessageCircleHeart, Pencil, Plus, Sparkles, Trash2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { createAnniversary, fetchAnniversaries } from '../api/anniversary';
+import { createAnniversary, deleteAnniversary, fetchAnniversaries, updateAnniversary } from '../api/anniversary';
 import { fetchPairing } from '../api/pairing';
 import PageHeader from '../components/PageHeader';
 import StatusBlock from '../components/StatusBlock';
@@ -19,6 +19,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editingItem, setEditingItem] = useState<AnniversaryResponse | null>(null);
 
   const loveDays = useMemo(() => {
     const love = anniversaries.find((item) => item.type === 'LOVE_ANNIVERSARY') ?? anniversaries[0];
@@ -39,29 +40,75 @@ export default function HomePage() {
     }
   }
 
-  async function handleCreate(event: FormEvent) {
+  function resetForm() {
+    setTitle('');
+    setDate('');
+    setEditingItem(null);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setError('');
+    setSuccess('');
+    setEditing(true);
+  }
+
+  function openEditForm(item: AnniversaryResponse) {
+    setTitle(item.title);
+    setDate(item.date);
+    setEditingItem(item);
+    setError('');
+    setSuccess('');
+    setEditing(true);
+  }
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
     setSuccess('');
     setSubmitting(true);
+    const payload = {
+      title,
+      date,
+      type: editingItem?.type || (anniversaries.length === 0 ? 'LOVE_ANNIVERSARY' : 'CUSTOM'),
+      visibility: editingItem?.visibility || (pairing?.paired ? 'COUPLE' : 'PRIVATE'),
+      remindDays: editingItem?.remindDays || [0, 1, 3],
+      surpriseMode: editingItem?.surpriseMode || false,
+      remark: editingItem?.remark || undefined
+    };
     try {
-      await createAnniversary({
-        title,
-        date,
-        type: anniversaries.length === 0 ? 'LOVE_ANNIVERSARY' : 'CUSTOM',
-        visibility: pairing?.paired ? 'COUPLE' : 'PRIVATE',
-        remindDays: [0, 1, 3],
-        surpriseMode: false
-      });
-      setTitle('');
-      setDate('');
-      setSuccess('纪念日已保存');
+      if (editingItem) {
+        await updateAnniversary(editingItem.id, payload);
+      } else {
+        await createAnniversary(payload);
+      }
+      resetForm();
+      setSuccess(editingItem ? '纪念日已更新' : '纪念日已保存');
       setEditing(false);
       await load();
     } catch (err) {
       setError(toFriendlyError(err));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(item: AnniversaryResponse) {
+    if (!window.confirm(`删除“${item.title}”？`)) {
+      return;
+    }
+    setError('');
+    setSuccess('');
+    try {
+      await deleteAnniversary(item.id);
+      if (editingItem?.id === item.id) {
+        resetForm();
+        setEditing(false);
+      }
+      setSuccess('纪念日已删除');
+      await load();
+    } catch (err) {
+      setError(toFriendlyError(err));
     }
   }
 
@@ -75,7 +122,18 @@ export default function HomePage() {
         eyebrow="LoveMaster"
         title="我们在一起"
         action={
-          <button className="icon-action" onClick={() => setEditing((value) => !value)} aria-label={editing ? '关闭新增纪念日' : '新增纪念日'}>
+          <button
+            className="icon-action"
+            onClick={() => {
+              if (editing) {
+                resetForm();
+                setEditing(false);
+              } else {
+                openCreateForm();
+              }
+            }}
+            aria-label={editing ? '关闭纪念日表单' : '新增纪念日'}
+          >
             {editing ? <X size={21} /> : <Plus size={21} />}
           </button>
         }
@@ -133,30 +191,48 @@ export default function HomePage() {
                 <strong>{item.title}</strong>
                 <span>{formatDate(item.date)}</span>
               </div>
-              <em>{daysUntil(item.date) === 0 ? '今天' : `还有 ${daysUntil(item.date)} 天`}</em>
+              <div className="row-card-side">
+                <em>{daysUntil(item.date) === 0 ? '今天' : `还有 ${daysUntil(item.date)} 天`}</em>
+                <div className="card-actions">
+                  <button type="button" onClick={() => openEditForm(item)} aria-label={`编辑${item.title}`}>
+                    <Pencil size={15} />
+                  </button>
+                  <button type="button" onClick={() => void handleDelete(item)} aria-label={`删除${item.title}`}>
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
             </article>
           ))}
         </div>
       </section>
 
       {!editing ? (
-        <button className="add-inline-card" onClick={() => setEditing(true)}>
+        <button className="add-inline-card" onClick={openCreateForm}>
           <CalendarHeart size={18} />
           <span>记录一个重要日子</span>
           <Plus size={18} />
         </button>
       ) : (
-        <form className="compact-form soft-card" onSubmit={handleCreate}>
+        <form className="compact-form soft-card" onSubmit={handleSubmit}>
           <div className="section-title">
-            <h2>新增纪念日</h2>
-            <button type="button" className="plain-icon-button" onClick={() => setEditing(false)} aria-label="取消新增">
+            <h2>{editingItem ? '编辑纪念日' : '新增纪念日'}</h2>
+            <button
+              type="button"
+              className="plain-icon-button"
+              onClick={() => {
+                resetForm();
+                setEditing(false);
+              }}
+              aria-label="关闭纪念日表单"
+            >
               <X size={18} />
             </button>
           </div>
           <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如：第一次旅行纪念日" />
           <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
           <button className="primary-button compact" disabled={!title || !date || submitting}>
-            {submitting ? '保存中...' : '保存'}
+            {submitting ? '保存中...' : editingItem ? '更新' : '保存'}
           </button>
         </form>
       )}

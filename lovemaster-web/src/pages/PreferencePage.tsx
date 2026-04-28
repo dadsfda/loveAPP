@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Gift, Plus, X } from 'lucide-react';
-import { createPreference, fetchPreferences } from '../api/preference';
+import { Gift, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { createPreference, deletePreference, fetchPreferences, updatePreference } from '../api/preference';
 import PageHeader from '../components/PageHeader';
 import StatusBlock from '../components/StatusBlock';
 import type { PreferenceResponse, PreferenceTarget, Visibility } from '../types/api';
@@ -20,6 +20,7 @@ export default function PreferencePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editingItem, setEditingItem] = useState<PreferenceResponse | null>(null);
 
   const filteredItems = useMemo(() => items.filter((item) => item.category === category), [category, items]);
 
@@ -34,22 +35,72 @@ export default function PreferencePage() {
     }
   }
 
+  function resetForm() {
+    setContent('');
+    setTagsInput('');
+    setVisibility('PRIVATE');
+    setTarget('PARTNER_OBSERVED');
+    setEditingItem(null);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setError('');
+    setSuccess('');
+    setEditing(true);
+  }
+
+  function openEditForm(item: PreferenceResponse) {
+    setCategory(item.category as PreferenceCategory);
+    setContent(item.content);
+    setTagsInput(item.tags.join(' '));
+    setVisibility(item.visibility);
+    setTarget(item.target);
+    setEditingItem(item);
+    setError('');
+    setSuccess('');
+    setEditing(true);
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
     setSuccess('');
     setSubmitting(true);
+    const payload = { category, content, visibility, target, tags: parseTagsInput(tagsInput) };
     try {
-      await createPreference({ category, content, visibility, target, tags: parseTagsInput(tagsInput) });
-      setContent('');
-      setTagsInput('');
-      setSuccess('偏好已保存');
+      if (editingItem) {
+        await updatePreference(editingItem.id, payload);
+      } else {
+        await createPreference(payload);
+      }
+      resetForm();
+      setSuccess(editingItem ? '偏好已更新' : '偏好已保存');
       setEditing(false);
       await load();
     } catch (err) {
       setError(toFriendlyError(err));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(item: PreferenceResponse) {
+    if (!window.confirm(`删除这条偏好？`)) {
+      return;
+    }
+    setError('');
+    setSuccess('');
+    try {
+      await deletePreference(item.id);
+      if (editingItem?.id === item.id) {
+        resetForm();
+        setEditing(false);
+      }
+      setSuccess('偏好已删除');
+      await load();
+    } catch (err) {
+      setError(toFriendlyError(err));
     }
   }
 
@@ -62,7 +113,18 @@ export default function PreferencePage() {
       <PageHeader
         title="TA 的小偏好"
         action={
-          <button className="icon-action" onClick={() => setEditing((value) => !value)} aria-label={editing ? '关闭新增偏好' : '新增偏好'}>
+          <button
+            className="icon-action"
+            onClick={() => {
+              if (editing) {
+                resetForm();
+                setEditing(false);
+              } else {
+                openCreateForm();
+              }
+            }}
+            aria-label={editing ? '关闭偏好表单' : '新增偏好'}
+          >
             {editing ? <X size={21} /> : <Plus size={21} />}
           </button>
         }
@@ -79,7 +141,7 @@ export default function PreferencePage() {
       </div>
 
       {!editing ? (
-        <button className="add-inline-card" onClick={() => setEditing(true)}>
+        <button className="add-inline-card" onClick={openCreateForm}>
           <Gift size={18} />
           <span>记录一条新的偏好</span>
           <Plus size={18} />
@@ -87,8 +149,16 @@ export default function PreferencePage() {
       ) : (
         <form className="compact-form soft-card" onSubmit={handleSubmit}>
           <div className="section-title">
-            <h2>新增偏好</h2>
-            <button type="button" className="plain-icon-button" onClick={() => setEditing(false)} aria-label="取消新增">
+            <h2>{editingItem ? '编辑偏好' : '新增偏好'}</h2>
+            <button
+              type="button"
+              className="plain-icon-button"
+              onClick={() => {
+                resetForm();
+                setEditing(false);
+              }}
+              aria-label="关闭偏好表单"
+            >
               <X size={18} />
             </button>
           </div>
@@ -103,7 +173,7 @@ export default function PreferencePage() {
             <button type="button" className={visibility === 'COUPLE' ? 'active' : ''} onClick={() => setVisibility('COUPLE')}>双方可见</button>
           </div>
           <button className="primary-button compact" disabled={!content.trim() || submitting}>
-            {submitting ? '保存中...' : '保存偏好'}
+            {submitting ? '保存中...' : editingItem ? '更新偏好' : '保存偏好'}
           </button>
         </form>
       )}
@@ -115,7 +185,17 @@ export default function PreferencePage() {
           <article className="soft-card preference-card" key={item.id}>
             <div className="card-heading">
               <strong>{getPreferenceCategoryLabel(item.category)}</strong>
-              <small>{item.target === 'SELF' ? '我的偏好' : 'TA 的偏好'}</small>
+              <div className="card-heading-side">
+                <small>{item.target === 'SELF' ? '我的偏好' : 'TA 的偏好'}</small>
+                <div className="card-actions">
+                  <button type="button" onClick={() => openEditForm(item)} aria-label="编辑偏好">
+                    <Pencil size={15} />
+                  </button>
+                  <button type="button" onClick={() => void handleDelete(item)} aria-label="删除偏好">
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
             </div>
             <p>{item.content}</p>
             {item.tags.length > 0 ? (

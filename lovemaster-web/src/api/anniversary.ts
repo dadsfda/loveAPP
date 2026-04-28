@@ -18,3 +18,11 @@ export function fetchAnniversaries() {
 export function createAnniversary(payload: CreateAnniversaryPayload) {
   return apiClient.post<AnniversaryResponse, AnniversaryResponse>('/anniversaries', payload);
 }
+
+export function updateAnniversary(id: number, payload: CreateAnniversaryPayload) {
+  return apiClient.put<AnniversaryResponse, AnniversaryResponse>(`/anniversaries/${id}`, payload);
+}
+
+export function deleteAnniversary(id: number) {
+  return apiClient.delete<void, void>(`/anniversaries/${id}`);
+}

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, ImagePlus, LoaderCircle, Plus, X } from 'lucide-react';
-import { createMemory, fetchMemories, uploadImage } from '../api/memory';
+import { CheckCircle2, ImagePlus, LoaderCircle, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { createMemory, deleteMemory, fetchMemories, updateMemory, uploadImage } from '../api/memory';
 import { getUploadUrl } from '../api/client';
 import PageHeader from '../components/PageHeader';
 import StatusBlock from '../components/StatusBlock';
@@ -25,6 +25,7 @@ export default function MemoriesPage() {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editingItem, setEditingItem] = useState<MemoryResponse | null>(null);
   const previewUrlRef = useRef('');
 
   async function load() {
@@ -38,6 +39,49 @@ export default function MemoriesPage() {
     }
   }
 
+  function clearLocalPreview() {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = '';
+    }
+  }
+
+  function resetForm() {
+    setTitle('');
+    setMemoryDate(new Date().toISOString().slice(0, 10));
+    setLocation('');
+    setContent('');
+    setTagsInput('');
+    setImageUrl('');
+    clearLocalPreview();
+    setPreviewUrl('');
+    setVisibility('PRIVATE');
+    setEditingItem(null);
+  }
+
+  function openCreateForm() {
+    resetForm();
+    setError('');
+    setSuccess('');
+    setEditing(true);
+  }
+
+  function openEditForm(item: MemoryResponse) {
+    clearLocalPreview();
+    setTitle(item.title);
+    setMemoryDate(item.memoryDate);
+    setLocation(item.location || '');
+    setContent(item.content || '');
+    setTagsInput(item.tags.join(' '));
+    setImageUrl(item.imageUrl || '');
+    setPreviewUrl(getUploadUrl(item.imageUrl) || '');
+    setVisibility(item.visibility);
+    setEditingItem(item);
+    setError('');
+    setSuccess('');
+    setEditing(true);
+  }
+
   async function handleUpload(file?: File) {
     if (!file) {
       return;
@@ -45,9 +89,7 @@ export default function MemoriesPage() {
     setError('');
     setSuccess('');
     const localPreview = URL.createObjectURL(file);
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-    }
+    clearLocalPreview();
     previewUrlRef.current = localPreview;
     setPreviewUrl(localPreview);
     setUploading(true);
@@ -67,19 +109,15 @@ export default function MemoriesPage() {
     setError('');
     setSuccess('');
     setSubmitting(true);
+    const payload = { title, memoryDate, location, content, imageUrl, visibility, tags: parseTagsInput(tagsInput) };
     try {
-      await createMemory({ title, memoryDate, location, content, imageUrl, visibility, tags: parseTagsInput(tagsInput) });
-      setTitle('');
-      setLocation('');
-      setContent('');
-      setTagsInput('');
-      setImageUrl('');
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current);
-        previewUrlRef.current = '';
+      if (editingItem) {
+        await updateMemory(editingItem.id, payload);
+      } else {
+        await createMemory(payload);
       }
-      setPreviewUrl('');
-      setSuccess('回忆已保存');
+      resetForm();
+      setSuccess(editingItem ? '回忆已更新' : '回忆已保存');
       setEditing(false);
       await load();
     } catch (err) {
@@ -89,12 +127,29 @@ export default function MemoriesPage() {
     }
   }
 
+  async function handleDelete(item: MemoryResponse) {
+    if (!window.confirm(`删除“${item.title}”？`)) {
+      return;
+    }
+    setError('');
+    setSuccess('');
+    try {
+      await deleteMemory(item.id);
+      if (editingItem?.id === item.id) {
+        resetForm();
+        setEditing(false);
+      }
+      setSuccess('回忆已删除');
+      await load();
+    } catch (err) {
+      setError(toFriendlyError(err));
+    }
+  }
+
   useEffect(() => {
     void load();
     return () => {
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current);
-      }
+      clearLocalPreview();
     };
   }, []);
 
@@ -103,7 +158,18 @@ export default function MemoriesPage() {
       <PageHeader
         title="专属回忆"
         action={
-          <button className="icon-action" onClick={() => setEditing((value) => !value)} aria-label={editing ? '关闭新增回忆' : '新增回忆'}>
+          <button
+            className="icon-action"
+            onClick={() => {
+              if (editing) {
+                resetForm();
+                setEditing(false);
+              } else {
+                openCreateForm();
+              }
+            }}
+            aria-label={editing ? '关闭回忆表单' : '新增回忆'}
+          >
             {editing ? <X size={21} /> : <Plus size={21} />}
           </button>
         }
@@ -112,7 +178,7 @@ export default function MemoriesPage() {
       {success ? <p className="form-success">{success}</p> : null}
 
       {!editing ? (
-        <button className="add-inline-card" onClick={() => setEditing(true)}>
+        <button className="add-inline-card" onClick={openCreateForm}>
           <ImagePlus size={18} />
           <span>记录一段新的回忆</span>
           <Plus size={18} />
@@ -120,8 +186,16 @@ export default function MemoriesPage() {
       ) : (
         <form className="compact-form soft-card" onSubmit={handleSubmit}>
           <div className="section-title">
-            <h2>记录这一刻</h2>
-            <button type="button" className="plain-icon-button" onClick={() => setEditing(false)} aria-label="取消新增">
+            <h2>{editingItem ? '编辑回忆' : '记录这一刻'}</h2>
+            <button
+              type="button"
+              className="plain-icon-button"
+              onClick={() => {
+                resetForm();
+                setEditing(false);
+              }}
+              aria-label="关闭回忆表单"
+            >
               <X size={18} />
             </button>
           </div>
@@ -146,7 +220,7 @@ export default function MemoriesPage() {
             <button type="button" className={visibility === 'COUPLE' ? 'active' : ''} onClick={() => setVisibility('COUPLE')}>双方可见</button>
           </div>
           <button className="primary-button compact" disabled={!title || !memoryDate || uploading || submitting}>
-            {submitting ? '保存中...' : '保存回忆'}
+            {submitting ? '保存中...' : editingItem ? '更新回忆' : '保存回忆'}
           </button>
         </form>
       )}
@@ -157,8 +231,20 @@ export default function MemoriesPage() {
         {items.map((item) => (
           <article className="soft-card memory-card" key={item.id}>
             {item.imageUrl ? <img src={getUploadUrl(item.imageUrl)} alt={item.title} /> : <div className="memory-placeholder">❤</div>}
-            <strong>{item.title}</strong>
-            <span>{formatDate(item.memoryDate)}</span>
+            <div className="card-heading">
+              <div>
+                <strong>{item.title}</strong>
+                <span>{formatDate(item.memoryDate)}</span>
+              </div>
+              <div className="card-actions">
+                <button type="button" onClick={() => openEditForm(item)} aria-label={`编辑${item.title}`}>
+                  <Pencil size={15} />
+                </button>
+                <button type="button" onClick={() => void handleDelete(item)} aria-label={`删除${item.title}`}>
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
             {item.location ? <small className="memory-location">{item.location}</small> : null}
             {item.content ? <p>{item.content}</p> : null}
             {item.tags.length > 0 ? (
