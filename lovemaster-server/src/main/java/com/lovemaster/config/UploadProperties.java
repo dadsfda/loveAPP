@@ -14,4 +14,24 @@ public class UploadProperties {
     private String imageUrlPrefix = "/uploads/images";
 
     private long maxImageSize = 5 * 1024 * 1024;
+
+    private String storageType = "local";
+
+    private Cos cos = new Cos();
+
+    @Data
+    public static class Cos {
+
+        private String secretId;
+
+        private String secretKey;
+
+        private String region;
+
+        private String bucket;
+
+        private String keyPrefix = "uploads/images";
+
+        private String publicBaseUrl;
+    }
 }

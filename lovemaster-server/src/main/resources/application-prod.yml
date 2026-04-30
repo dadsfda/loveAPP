@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:lovemaster}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+jwt:
+  secret: ${JWT_SECRET:lovemaster-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:7200000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
+lovemaster:
+  cors:
+    allowed-origins: ${LOVEMASTER_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  upload:
+    image-dir: ${UPLOAD_IMAGE_DIR:/tmp/lovemaster/uploads/images}
+    image-url-prefix: ${UPLOAD_IMAGE_URL_PREFIX:/uploads/images}
+    max-image-size: ${UPLOAD_MAX_IMAGE_SIZE:5242880}
+    storage-type: ${LOVEMASTER_STORAGE_TYPE:local}
+    cos:
+      secret-id: ${TENCENTCLOUD_SECRET_ID:${TENCENTCLOUD_SECRETID:}}
+      secret-key: ${TENCENTCLOUD_SECRET_KEY:${TENCENTCLOUD_SECRETKEY:}}
+      region: ${CLOUDBASE_STORAGE_REGION:}
+      bucket: ${CLOUDBASE_STORAGE_BUCKET:}
+      key-prefix: ${CLOUDBASE_STORAGE_KEY_PREFIX:uploads/images}
+      public-base-url: ${CLOUDBASE_STORAGE_PUBLIC_BASE_URL:}
+  ai:
+    enabled: ${LOVEMASTER_AI_ENABLED:false}
+    provider: qwen
+    base-url: ${LOVEMASTER_AI_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
+    model: ${LOVEMASTER_AI_MODEL:qwen-plus}
+    timeout-seconds: ${LOVEMASTER_AI_TIMEOUT_SECONDS:20}
+    api-key-env-name: ${LOVEMASTER_AI_API_KEY_ENV_NAME:DASHSCOPE_API_KEY}
+
+logging:
+  level:
+    com.lovemaster: INFO
+    org.springframework.security: WARN

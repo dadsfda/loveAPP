@@ -173,9 +173,6 @@ a {
 .compact-form textarea {
   width: 100%;
   min-height: 48px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
@@ -183,8 +180,13 @@ a {
   padding: 0 14px;
 }
 
+.input-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .input-field input,
-.compact-form input,
 .compact-form textarea {
   border: 0;
   outline: 0;
@@ -192,6 +194,24 @@ a {
   min-width: 0;
   color: #2f2f35;
   background: transparent;
+}
+
+.compact-form input {
+  display: block;
+  border: 1px solid var(--line);
+  outline: 0;
+  color: #2f2f35;
+}
+
+.compact-form input[type="date"] {
+  line-height: 48px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.compact-form input[type="date"]::-webkit-date-and-time-value {
+  min-height: 1.4em;
+  text-align: left;
 }
 
 .compact-form textarea {

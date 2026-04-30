@@ -43,7 +43,7 @@ export default function ProfilePage() {
       // 登出失败也清理本地登录态，避免用户被困在当前页面。
     } finally {
       clearAuth();
-      window.location.assign('/login');
+      window.location.assign('/#/login');
     }
   }
 

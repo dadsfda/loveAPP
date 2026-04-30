@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createHashRouter, Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import AppShell from '../components/AppShell';
 import LoginPage from '../pages/LoginPage';
@@ -21,7 +21,7 @@ function GuestGuard() {
   return token?.accessToken ? <Navigate to="/" replace /> : <Outlet />;
 }
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     element: <GuestGuard />,
     children: [

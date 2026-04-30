@@ -2,20 +2,30 @@ spring:
   application:
     name: lovemaster-server
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   servlet:
     multipart:
       max-file-size: 5MB
       max-request-size: 5MB
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 lovemaster:
+  cors:
+    allowed-origins: ${LOVEMASTER_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   upload:
     image-dir: uploads/images
     image-url-prefix: /uploads/images
     max-image-size: 5242880
+    storage-type: ${LOVEMASTER_STORAGE_TYPE:local}
+    cos:
+      secret-id: ${TENCENTCLOUD_SECRET_ID:${TENCENTCLOUD_SECRETID:}}
+      secret-key: ${TENCENTCLOUD_SECRET_KEY:${TENCENTCLOUD_SECRETKEY:}}
+      region: ${CLOUDBASE_STORAGE_REGION:}
+      bucket: ${CLOUDBASE_STORAGE_BUCKET:}
+      key-prefix: ${CLOUDBASE_STORAGE_KEY_PREFIX:uploads/images}
+      public-base-url: ${CLOUDBASE_STORAGE_PUBLIC_BASE_URL:}
   ai:
     enabled: false
     provider: qwen

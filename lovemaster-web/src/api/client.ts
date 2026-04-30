@@ -2,7 +2,11 @@ import axios, { AxiosError } from 'axios';
 import { ApiBusinessError, type ApiResponse } from '../types/api';
 import { getAccessToken, useAuthStore } from '../stores/authStore';
 
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+const defaultApiBaseURL = import.meta.env.PROD
+  ? 'https://lovemaster-api-252091-7-1418276225.sh.run.tcloudbase.com/api/v1'
+  : 'http://localhost:8080/api/v1';
+
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || defaultApiBaseURL;
 
 export const apiClient = axios.create({
   baseURL: apiBaseURL,
@@ -32,7 +36,7 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
     if (status === 401) {
       useAuthStore.getState().clearAuth();
-      window.location.assign('/login');
+      window.location.assign('/#/login');
     }
 
     const code = error.response?.data?.code ?? status ?? 0;
